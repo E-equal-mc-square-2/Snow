@@ -1,0 +1,40 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Space+Grotesk:wght@300;400;500;600;700&family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;1,300;1,400&display=swap');
+@import "tailwindcss";
+
+@theme {
+  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
+  --font-display: "Space Grotesk", sans-serif;
+  --font-serif: "Cormorant Garamond", serif;
+}
+
+@layer base {
+  body {
+    @apply bg-[#0a0a0a] text-white font-sans antialiased overflow-x-hidden;
+  }
+}
+
+.glass {
+  @apply bg-white/5 backdrop-blur-xl border border-white/10;
+}
+
+.anime-gradient {
+  background: linear-gradient(135deg, #ff0080 0%, #7928ca 100%);
+}
+
+.sci-fi-gradient {
+  background: linear-gradient(135deg, #00f2fe 0%, #4facfe 100%);
+}
+
+.voice-gradient {
+  background: linear-gradient(135deg, #f6d365 0%, #fda085 100%);
+}
+
+@layer utilities {
+  .custom-audio::-webkit-media-controls-panel {
+    @apply bg-orange-500/10 backdrop-blur-md;
+  }
+  .custom-audio::-webkit-media-controls-play-button {
+    @apply bg-orange-500 rounded-full;
+  }
+}
+

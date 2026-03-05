@@ -1,0 +1,8 @@
+{
+  "name": "Snow De Venta",
+  "description": "An immersive AI companion app featuring Snow De Venta, with advanced chat, image generation, and text-to-speech capabilities.",
+  "requestFramePermissions": [
+    "camera",
+    "microphone"
+  ]
+}
