@@ -24,6 +24,7 @@ import {
 } from 'lucide-react';
 import Markdown from 'react-markdown';
 import { chatWithPersona, generateImage, editImage } from './services/geminiService';
+import { db } from './services/storageService';
 import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
 
@@ -102,23 +103,17 @@ const AuthPage = ({ onLogin }: { onLogin: (user: string) => void }) => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
-    const endpoint = isLogin ? '/api/auth/login' : '/api/auth/signup';
-    const body = isLogin ? { email, password } : { username, email, password };
 
     try {
-      const res = await fetch(endpoint, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(body)
-      });
-      const data = await res.json();
-      if (data.success) {
+      if (isLogin) {
+        const data = db.login(email, password);
         onLogin(data.username);
       } else {
-        setError(data.error);
+        const data = db.signup(username, email, password);
+        onLogin(data.username);
       }
-    } catch (err) {
-      setError('Connection failed');
+    } catch (err: any) {
+      setError(err.message || 'Action failed');
     }
   };
 
@@ -314,27 +309,18 @@ const ChatPage = ({ username }: { username: string }) => {
     const loadHistory = async () => {
       try {
         // First get latest session IDs for both personas
-        const [snowSessionRes, kmSessionRes] = await Promise.all([
-          fetch(`/api/chat/latest_session/${username}/snow`),
-          fetch(`/api/chat/latest_session/${username}/kilometres`)
-        ]);
-        const snowSessionData = await snowSessionRes.json();
-        const kmSessionData = await kmSessionRes.json();
+        const snowSessionId = db.getLatestSession(username, 'snow');
+        const kmSessionId = db.getLatestSession(username, 'kilometres');
 
         const newSessionIds = {
-          snow: snowSessionData.session_id || `session-${Date.now()}-snow`,
-          kilometres: kmSessionData.session_id || `session-${Date.now()}-km`
+          snow: snowSessionId || `session-${Date.now()}-snow`,
+          kilometres: kmSessionId || `session-${Date.now()}-km`
         };
         setSessionIds(newSessionIds);
 
         // Fetch history for both personas' latest sessions
-        const [snowHistoryRes, kmHistoryRes] = await Promise.all([
-          fetch(`/api/chat/history/${username}?persona=snow&session_id=${newSessionIds.snow}`),
-          fetch(`/api/chat/history/${username}?persona=kilometres&session_id=${newSessionIds.kilometres}`)
-        ]);
-        
-        const snowHistory = await snowHistoryRes.json();
-        const kmHistory = await kmHistoryRes.json();
+        const snowHistory = db.getHistory(username, 'snow', newSessionIds.snow);
+        const kmHistory = db.getHistory(username, 'kilometres', newSessionIds.kilometres);
 
         const combinedHistory = [
           ...(snowHistory.length > 0 ? snowHistory : [{ role: 'assistant', content: 'Hello. I am Snow. What is on your mind?', persona: 'snow', session_id: newSessionIds.snow }]),
@@ -365,11 +351,7 @@ const ChatPage = ({ username }: { username: string }) => {
 
     try {
       // Save user message
-      await fetch('/api/chat/save', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ username, ...userMsg })
-      });
+      db.saveMessage({ username, ...userMsg });
 
       const personaMessages = messages.filter(m => m.persona === activePersona && m.session_id === currentSessionId);
       const history = personaMessages.map(m => ({
@@ -382,11 +364,7 @@ const ChatPage = ({ username }: { username: string }) => {
       setMessages(prev => [...prev, assistantMsg]);
 
       // Save assistant message
-      await fetch('/api/chat/save', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ username, ...assistantMsg })
-      });
+      db.saveMessage({ username, ...assistantMsg });
     } catch (err) {
       setMessages(prev => [...prev, { role: 'assistant', content: 'Sorry, I am having trouble connecting right now.', persona: activePersona, session_id: currentSessionId }]);
     } finally {
@@ -396,8 +374,8 @@ const ChatPage = ({ username }: { username: string }) => {
 
   const handleNewChat = async () => {
     try {
-      // Don't use the global loading state to avoid typing indicator confusion
-      await fetch(`/api/chat/clear/${username}/${activePersona}`, { method: 'DELETE' });
+      // Clear history for this persona in storage
+      db.clearHistory(username, activePersona);
       
       const newSessionId = `session-${Date.now()}-${activePersona}`;
       setSessionIds(prev => ({ ...prev, [activePersona]: newSessionId }));

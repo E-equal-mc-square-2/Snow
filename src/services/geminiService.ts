@@ -13,7 +13,8 @@ Credit: Kilometres De Venta.`;
 
 export async function chatWithPersona(message: string, persona: 'snow' | 'kilometres', history: any[] = [], imageBase64?: string) {
   const { GoogleGenAI } = await import("@google/genai");
-  const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY || "" });
+  const apiKey = import.meta.env.VITE_GEMINI_API_KEY || process.env.GEMINI_API_KEY || "";
+  const ai = new GoogleGenAI({ apiKey });
   const systemInstruction = persona === 'snow' ? SNOW_PERSONA : KILOMETRES_PERSONA;
   
   const model = ai.models.generateContent({
@@ -39,7 +40,8 @@ export async function chatWithPersona(message: string, persona: 'snow' | 'kilome
 
 export async function generateImage(prompt: string, aspectRatio: string = "1:1") {
   const { GoogleGenAI } = await import("@google/genai");
-  const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY || "" });
+  const apiKey = import.meta.env.VITE_GEMINI_API_KEY || process.env.GEMINI_API_KEY || "";
+  const ai = new GoogleGenAI({ apiKey });
   const response = await ai.models.generateContent({
     model: 'gemini-2.5-flash-image',
     contents: {
@@ -62,7 +64,8 @@ export async function generateImage(prompt: string, aspectRatio: string = "1:1")
 
 export async function editImage(imageBase64: string, prompt: string, aspectRatio?: string) {
   const { GoogleGenAI } = await import("@google/genai");
-  const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY || "" });
+  const apiKey = import.meta.env.VITE_GEMINI_API_KEY || process.env.GEMINI_API_KEY || "";
+  const ai = new GoogleGenAI({ apiKey });
   const response = await ai.models.generateContent({
     model: 'gemini-2.5-flash-image',
     contents: {
