@@ -365,8 +365,15 @@ const ChatPage = ({ username }: { username: string }) => {
 
       // Save assistant message
       db.saveMessage({ username, ...assistantMsg });
-    } catch (err) {
-      setMessages(prev => [...prev, { role: 'assistant', content: 'Sorry, I am having trouble connecting right now.', persona: activePersona, session_id: currentSessionId }]);
+    } catch (err: any) {
+      console.error("Chat error:", err);
+      const errorMessage = err.message || 'Sorry, I am having trouble connecting right now.';
+      setMessages(prev => [...prev, { 
+        role: 'assistant', 
+        content: errorMessage, 
+        persona: activePersona, 
+        session_id: currentSessionId 
+      }]);
     } finally {
       setLoading(false);
     }

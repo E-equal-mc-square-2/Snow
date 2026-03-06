@@ -13,7 +13,18 @@ Credit: Kilometres De Venta.`;
 
 export async function chatWithPersona(message: string, persona: 'snow' | 'kilometres', history: any[] = [], imageBase64?: string) {
   const { GoogleGenAI } = await import("@google/genai");
-  const apiKey = import.meta.env.VITE_GEMINI_API_KEY || process.env.GEMINI_API_KEY || "";
+  
+  // Try all possible ways to find the key in a Vite/Netlify environment
+  const apiKey = 
+    import.meta.env.VITE_GEMINI_API_KEY || 
+    (typeof process !== 'undefined' ? process.env.GEMINI_API_KEY : "") ||
+    (typeof window !== 'undefined' && (window as any)._env_?.VITE_GEMINI_API_KEY) ||
+    "";
+  
+  if (!apiKey || apiKey === "undefined") {
+    throw new Error("API Key not found. 1. Add VITE_GEMINI_API_KEY to Netlify. 2. Trigger a NEW DEPLOY (Clear cache and deploy).");
+  }
+
   const ai = new GoogleGenAI({ apiKey });
   const systemInstruction = persona === 'snow' ? SNOW_PERSONA : KILOMETRES_PERSONA;
   
@@ -40,7 +51,15 @@ export async function chatWithPersona(message: string, persona: 'snow' | 'kilome
 
 export async function generateImage(prompt: string, aspectRatio: string = "1:1") {
   const { GoogleGenAI } = await import("@google/genai");
-  const apiKey = import.meta.env.VITE_GEMINI_API_KEY || process.env.GEMINI_API_KEY || "";
+  const apiKey = 
+    import.meta.env.VITE_GEMINI_API_KEY || 
+    (typeof process !== 'undefined' ? process.env.GEMINI_API_KEY : "") ||
+    "";
+  
+  if (!apiKey || apiKey === "undefined") {
+    throw new Error("API Key not found. Please trigger a NEW DEPLOY on Netlify.");
+  }
+
   const ai = new GoogleGenAI({ apiKey });
   const response = await ai.models.generateContent({
     model: 'gemini-2.5-flash-image',
@@ -64,7 +83,12 @@ export async function generateImage(prompt: string, aspectRatio: string = "1:1")
 
 export async function editImage(imageBase64: string, prompt: string, aspectRatio?: string) {
   const { GoogleGenAI } = await import("@google/genai");
-  const apiKey = import.meta.env.VITE_GEMINI_API_KEY || process.env.GEMINI_API_KEY || "";
+  const apiKey = import.meta.env.VITE_GEMINI_API_KEY || (typeof process !== 'undefined' ? process.env.GEMINI_API_KEY : "") || "";
+  
+  if (!apiKey) {
+    throw new Error("Gemini API Key is missing. Please add VITE_GEMINI_API_KEY to your Netlify environment variables.");
+  }
+
   const ai = new GoogleGenAI({ apiKey });
   const response = await ai.models.generateContent({
     model: 'gemini-2.5-flash-image',
